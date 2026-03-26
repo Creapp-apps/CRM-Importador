@@ -1,0 +1,55 @@
+import { SessionProvider } from 'next-auth/react';
+import { TenantProvider } from '@/components/providers/tenant-provider';
+import Sidebar from '@/components/dashboard/sidebar';
+import { getCurrentTenantUser } from '@/lib/tenant';
+import { redirect } from 'next/navigation';
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  let tenantData: {
+    tenantId: string | null;
+    tenantName: string | null;
+    tenantSlug: string | null;
+    userRole: string | null;
+    userName: string | null;
+  } = {
+    tenantId: null,
+    tenantName: null,
+    tenantSlug: null,
+    userRole: null,
+    userName: null,
+  };
+
+  try {
+    const tenantUser = await getCurrentTenantUser();
+    if (!tenantUser) {
+      redirect('/login');
+    }
+
+    tenantData = {
+      tenantId: tenantUser.tenantId,
+      tenantName: tenantUser.tenant.name,
+      tenantSlug: tenantUser.tenant.slug,
+      userRole: tenantUser.role,
+      userName: tenantUser.user.name,
+    };
+  } catch {
+    // If no session, middleware will redirect
+  }
+
+  return (
+    <SessionProvider>
+      <TenantProvider initialData={tenantData}>
+        <div style={{ display: 'flex', minHeight: '100vh' }}>
+          <Sidebar />
+          <main className="main-content">
+            <div className="main-body">{children}</div>
+          </main>
+        </div>
+      </TenantProvider>
+    </SessionProvider>
+  );
+}

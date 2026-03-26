@@ -1,0 +1,551 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ═══════════════════════════════════════════
+// CORE: MULTI-TENANCY & AUTH
+// ═══════════════════════════════════════════
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String // "Yerba Mate del Sur S.A."
+  slug      String   @unique // "yerbamate-sur" → subdominio
+  logoUrl   String?
+  cuit      String?
+  address   String?
+  phone     String?
+  email     String?
+  plan      PlanType @default(STARTER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Configuración fiscal AFIP
+  afipPuntoVenta  Int?
+  afipCertPath    String?
+  afipEnvironment AfipEnv @default(TESTING)
+
+  users      TenantUser[]
+  products   Product[]
+  customers  Customer[]
+  orders     Order[]
+  routes     DeliveryRoute[]
+  priceRules PriceRule[]
+  stockLogs  StockLog[]
+  promotions Promotion[]
+  invoices   Invoice[]
+  payments   Payment[]
+  categories CustomerCategory[]
+  uoms       UnitOfMeasure[]
+}
+
+enum PlanType {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum AfipEnv {
+  TESTING
+  PRODUCTION
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+
+  tenants TenantUser[]
+}
+
+model TenantUser {
+  id        String   @id @default(uuid())
+  userId    String
+  tenantId  String
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+  @@index([tenantId])
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  VENDEDOR
+  DEPOSITO
+  REPARTIDOR
+}
+
+// ═══════════════════════════════════════════
+// INVENTARIO: PRODUCTOS, UoM, PRESENTACIONES
+// ═══════════════════════════════════════════
+
+model UnitOfMeasure {
+  id       String      @id @default(uuid())
+  tenantId String
+  name     String // "paquete", "kg", "unidad", "litro"
+  symbol   String // "paq", "kg", "u", "L"
+  category UoMCategory // WEIGHT, VOLUME, UNIT, LENGTH
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+enum UoMCategory {
+  WEIGHT
+  VOLUME
+  UNIT
+  LENGTH
+}
+
+model Product {
+  id             String  @id @default(uuid())
+  tenantId       String
+  sku            String // "YRB-INT-500"
+  name           String // "Yerba Sabor Intenso"
+  description    String?
+  brand          String?
+  category       String?
+  baseUnitId     String
+  baseUnitWeight Decimal? // Peso en gramos de 1 unidad base
+  currentStock   Decimal  @default(0)
+  minimumStock   Decimal  @default(0)
+  imageUrl       String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant        Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  baseUnit      UnitOfMeasure         @relation(fields: [baseUnitId], references: [id])
+  presentations ProductPresentation[]
+  stockLogs     StockLog[]
+  priceRules    PriceRule[]
+
+  @@unique([tenantId, sku])
+  @@index([tenantId])
+}
+
+model ProductPresentation {
+  id               String  @id @default(uuid())
+  tenantId         String
+  productId        String
+  name             String // "Funda 20 x 500g"
+  shortName        String?
+  barcode          String?
+  conversionFactor Decimal // Cuántas unidades base contiene
+  packDescription  String? // "20 paquetes de 500g"
+  totalWeightGrams Decimal?
+  isDefault        Boolean @default(false)
+  isActive         Boolean @default(true)
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+  priceRules PriceRule[]
+  loadItems  DeliveryLoadItem[]
+
+  @@index([tenantId])
+  @@index([productId])
+}
+
+// ═══════════════════════════════════════════
+// AUDITORÍA DE STOCK
+// ═══════════════════════════════════════════
+
+model StockLog {
+  id              String       @id @default(uuid())
+  tenantId        String
+  productId       String
+  type            StockLogType
+  quantity        Decimal // +/- en unidad base
+  previousStock   Decimal
+  newStock        Decimal
+  referenceType   String? // "ORDER", "ADJUSTMENT", "DELIVERY"
+  referenceId     String?
+  reason          String?
+  notes           String?
+  performedBy     String
+  performedByName String
+  performedAt     DateTime     @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([productId])
+  @@index([tenantId, performedAt])
+}
+
+enum StockLogType {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+  RETURN
+  TRANSFER
+  LOSS
+  DELIVERY_LOAD
+  DELIVERY_RETURN
+}
+
+// ═══════════════════════════════════════════
+// CRM: CLIENTES Y CATEGORIZACIÓN
+// ═══════════════════════════════════════════
+
+model CustomerCategory {
+  id       String  @id @default(uuid())
+  tenantId String
+  name     String // "Distribuidor", "Mayorista"
+  color    String? // "#FF6B35"
+  discount Decimal? // Descuento base %
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customers  Customer[]
+  priceRules PriceRule[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model Customer {
+  id             String       @id @default(uuid())
+  tenantId       String
+  businessName   String
+  tradeName      String?
+  cuit           String?
+  email          String?
+  phone          String?
+  address        String?
+  city           String?
+  province       String?
+  postalCode     String?
+  latitude       Decimal?
+  longitude      Decimal?
+  categoryId     String?
+  salesChannel   SalesChannel?
+  currentBalance Decimal      @default(0) // (+) a favor, (-) deuda
+  creditLimit    Decimal?
+  notes          String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category   CustomerCategory? @relation(fields: [categoryId], references: [id])
+  orders     Order[]
+  payments   Payment[]
+  priceRules PriceRule[]
+  invoices   Invoice[]
+
+  @@index([tenantId])
+  @@index([tenantId, categoryId])
+}
+
+enum SalesChannel {
+  DIRECT
+  DISTRIBUTOR
+  ECOMMERCE
+  WHOLESALE
+}
+
+// ═══════════════════════════════════════════
+// MOTOR DE PRECIOS
+// ═══════════════════════════════════════════
+
+model PriceRule {
+  id                 String        @id @default(uuid())
+  tenantId           String
+  name               String
+  customerId         String?
+  customerCategoryId String?
+  productId          String?
+  presentationId     String?
+  ruleType           PriceRuleType
+  value              Decimal
+  validFrom          DateTime      @default(now())
+  validUntil         DateTime?
+  priority           Int           @default(0)
+  isActive           Boolean       @default(true)
+
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer     Customer?            @relation(fields: [customerId], references: [id])
+  category     CustomerCategory?    @relation(fields: [customerCategoryId], references: [id])
+  product      Product?             @relation(fields: [productId], references: [id])
+  presentation ProductPresentation? @relation(fields: [presentationId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, customerId])
+  @@index([tenantId, customerCategoryId])
+  @@index([tenantId, productId])
+}
+
+enum PriceRuleType {
+  FIXED_PRICE
+  PERCENTAGE_OFF
+  FIXED_DISCOUNT
+  MARKUP
+}
+
+// ═══════════════════════════════════════════
+// VENTAS: PEDIDOS, ITEMS, FACTURACIÓN
+// ═══════════════════════════════════════════
+
+model Order {
+  id            String      @id @default(uuid())
+  tenantId      String
+  orderNumber   String
+  customerId    String
+  status        OrderStatus @default(DRAFT)
+  subtotal      Decimal     @default(0)
+  discountTotal Decimal     @default(0)
+  taxTotal      Decimal     @default(0)
+  total         Decimal     @default(0)
+  notes         String?
+  createdById   String
+  createdByName String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer      Customer            @relation(fields: [customerId], references: [id])
+  items         OrderItem[]
+  invoices      Invoice[]
+  deliveryItems DeliveryRouteItem[]
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId])
+  @@index([tenantId, customerId])
+  @@index([tenantId, status])
+}
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  PREPARING
+  READY
+  IN_DELIVERY
+  DELIVERED
+  INVOICED
+  CANCELLED
+}
+
+model OrderItem {
+  id             String  @id @default(uuid())
+  orderId        String
+  presentationId String
+  quantity       Decimal
+  unitPrice      Decimal
+  discount       Decimal @default(0)
+  subtotal       Decimal
+  baseUnitsTotal Decimal
+  notes          String?
+
+  order        Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  presentation ProductPresentation @relation(fields: [presentationId], references: [id])
+
+  @@index([orderId])
+}
+
+// ═══════════════════════════════════════════
+// PROMOCIONES
+// ═══════════════════════════════════════════
+
+model Promotion {
+  id          String        @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  type        PromotionType
+  value       Decimal
+  minQuantity Int?
+  minAmount   Decimal?
+  appliesToAll Boolean      @default(false)
+  productIds  String[]
+  categoryIds String[]
+  validFrom   DateTime
+  validUntil  DateTime
+  isActive    Boolean       @default(true)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+}
+
+enum PromotionType {
+  PERCENTAGE_OFF
+  FIXED_DISCOUNT
+  BUY_X_GET_Y
+  VOLUME_DISCOUNT
+}
+
+// ═══════════════════════════════════════════
+// FACTURACIÓN Y CUENTAS CORRIENTES
+// ═══════════════════════════════════════════
+
+model Invoice {
+  id            String        @id @default(uuid())
+  tenantId      String
+  invoiceNumber String
+  customerId    String
+  orderId       String?
+  type          InvoiceType   @default(FACTURA_B)
+  status        InvoiceStatus @default(PENDING)
+  subtotal      Decimal
+  taxAmount     Decimal       @default(0)
+  total         Decimal
+  afipCae       String?
+  afipCaeExpiry DateTime?
+  afipResult    String?
+  issuedAt      DateTime      @default(now())
+  dueDate       DateTime?
+  pdfUrl        String?
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id])
+  order    Order?   @relation(fields: [orderId], references: [id])
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId])
+  @@index([tenantId, customerId])
+}
+
+enum InvoiceType {
+  FACTURA_A
+  FACTURA_B
+  FACTURA_C
+  NOTA_CREDITO_A
+  NOTA_CREDITO_B
+  NOTA_CREDITO_C
+  RECIBO
+}
+
+enum InvoiceStatus {
+  PENDING
+  ISSUED
+  PAID
+  PARTIALLY_PAID
+  CANCELLED
+  VOIDED
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  tenantId       String
+  customerId     String
+  amount         Decimal
+  method         PaymentMethod
+  reference      String?
+  notes          String?
+  receivedBy     String
+  receivedByName String
+  receivedAt     DateTime      @default(now())
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, customerId])
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CHECK
+  CREDIT_CARD
+  DEBIT_CARD
+  MERCADOPAGO
+  OTHER
+}
+
+// ═══════════════════════════════════════════
+// LOGÍSTICA: HOJAS DE RUTA Y REPARTOS
+// ═══════════════════════════════════════════
+
+model DeliveryRoute {
+  id            String         @id @default(uuid())
+  tenantId      String
+  routeNumber   String
+  vehiclePlate  String?
+  vehicleDesc   String?
+  driverId      String?
+  driverName    String?
+  status        DeliveryStatus @default(PLANNING)
+  scheduledDate DateTime
+  departedAt    DateTime?
+  completedAt   DateTime?
+  notes         String?
+  createdAt     DateTime       @default(now())
+
+  tenant    Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items     DeliveryRouteItem[]
+  loadItems DeliveryLoadItem[]
+
+  @@unique([tenantId, routeNumber])
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+enum DeliveryStatus {
+  PLANNING
+  LOADING
+  LOADED
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+model DeliveryRouteItem {
+  id          String             @id @default(uuid())
+  routeId     String
+  orderId     String
+  sequence    Int
+  status      DeliveryItemStatus @default(PENDING)
+  deliveredAt DateTime?
+  receivedBy  String?
+  signature   String?
+  notes       String?
+
+  route DeliveryRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  order Order         @relation(fields: [orderId], references: [id])
+
+  @@index([routeId])
+  @@index([orderId])
+}
+
+enum DeliveryItemStatus {
+  PENDING
+  DELIVERED
+  PARTIAL
+  REJECTED
+  RESCHEDULED
+}
+
+model DeliveryLoadItem {
+  id             String  @id @default(uuid())
+  routeId        String
+  presentationId String
+  quantity       Decimal
+  baseUnitsTotal Decimal
+
+  route        DeliveryRoute       @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  presentation ProductPresentation @relation(fields: [presentationId], references: [id])
+
+  @@index([routeId])
+}
