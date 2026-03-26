@@ -15,10 +15,7 @@ function createPrismaClient() {
   const pool = new pg.Pool({
     connectionString,
     max: 10,
-    // Supabase connection pooler (PgBouncer) compatibility
-    ssl: connectionString.includes("supabase.com")
-      ? { rejectUnauthorized: false }
-      : undefined,
+    ssl: { rejectUnauthorized: false },
   });
   const adapter = new PrismaPg(pool);
 
