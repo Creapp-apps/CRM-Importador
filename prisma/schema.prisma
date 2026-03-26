@@ -32,6 +32,11 @@ model Tenant {
   afipCertPath    String?
   afipEnvironment AfipEnv @default(TESTING)
 
+  // Configuración Logística
+  logisticBaseAddress String?
+  logisticBaseLat     Decimal?
+  logisticBaseLng     Decimal?
+
   users      TenantUser[]
   products   Product[]
   customers  Customer[]
@@ -224,27 +229,31 @@ model CustomerCategory {
 }
 
 model Customer {
-  id             String       @id @default(uuid())
-  tenantId       String
-  businessName   String
-  tradeName      String?
-  cuit           String?
-  email          String?
-  phone          String?
-  address        String?
-  city           String?
-  province       String?
-  postalCode     String?
-  latitude       Decimal?
-  longitude      Decimal?
-  categoryId     String?
-  salesChannel   SalesChannel?
-  currentBalance Decimal      @default(0) // (+) a favor, (-) deuda
-  creditLimit    Decimal?
-  notes          String?
-  isActive       Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id                 String       @id @default(uuid())
+  tenantId           String
+  customerType       CustomerType @default(BUSINESS) // EMPRESA (BUSINESS) o REVENDEDOR (INDIVIDUAL)
+  businessName       String       // Razón Social o Nombre Completo si es individuo
+  tradeName          String?
+  cuit               String?
+  contactName        String?      // Persona de contacto
+  contactRole        String?      // Rol (dueño, encargado de compras)
+  acquisitionChannel String?      // Por dónde llegó (Instagram, boca a boca, vendedor)
+  email              String?
+  phone              String?
+  address            String?
+  city               String?
+  province           String?
+  postalCode         String?
+  latitude           Decimal?
+  longitude          Decimal?
+  categoryId         String?
+  salesChannel       SalesChannel?
+  currentBalance     Decimal      @default(0) // (+) a favor, (-) deuda
+  creditLimit        Decimal?
+  notes              String?
+  isActive           Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
   tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category   CustomerCategory? @relation(fields: [categoryId], references: [id])
@@ -255,6 +264,11 @@ model Customer {
 
   @@index([tenantId])
   @@index([tenantId, categoryId])
+}
+
+enum CustomerType {
+  BUSINESS
+  INDIVIDUAL
 }
 
 enum SalesChannel {

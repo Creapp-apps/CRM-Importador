@@ -58,6 +58,35 @@ async function main() {
   });
   console.log("✅ Admin user created: admin@yerbaimportadora.com / admin123");
 
+  // ─── Super Admin (Platform Owner) ─────────────────
+  const superAdminHash = await bcrypt.hash("123456", 12);
+  const superAdmin = await prisma.user.upsert({
+    where: { email: "creapp.ar@gmail.com" },
+    update: { passwordHash: superAdminHash },
+    create: {
+      email: "creapp.ar@gmail.com",
+      name: "CreAPP Admin",
+      passwordHash: superAdminHash,
+    },
+  });
+
+  await prisma.tenantUser.upsert({
+    where: {
+      userId_tenantId: {
+        userId: superAdmin.id,
+        tenantId: tenant.id,
+      },
+    },
+    update: { role: UserRole.SUPER_ADMIN },
+    create: {
+      userId: superAdmin.id,
+      tenantId: tenant.id,
+      role: UserRole.SUPER_ADMIN,
+    },
+  });
+  console.log("✅ Super Admin created: creapp.ar@gmail.com / 123456");
+
+
   // ─── 3. Create additional users ────────────────
   const vendedorHash = await bcrypt.hash("vendedor123", 12);
   const vendedor = await prisma.user.upsert({

@@ -28,7 +28,12 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Email o contraseña incorrectos');
       } else {
-        router.push('/dashboard');
+        // Get session to check if super admin
+        const { getSession } = await import('next-auth/react');
+        const session = await getSession();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const isSuperAdmin = (session?.user as any)?.isSuperAdmin;
+        router.push(isSuperAdmin ? '/super-admin' : '/dashboard');
         router.refresh();
       }
     } catch {
@@ -37,6 +42,7 @@ export default function LoginPage() {
       setLoading(false);
     }
   }
+
 
   return (
     <div className="login-container">

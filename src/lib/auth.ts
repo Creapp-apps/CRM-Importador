@@ -20,6 +20,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             tenants: {
               where: { isActive: true },
               include: { tenant: true },
+              orderBy: { createdAt: "asc" },
             },
           },
         });
@@ -33,11 +34,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!isPasswordValid) return null;
 
+        // Check if this user has a SUPER_ADMIN role in any tenant
+        const superAdminEntry = user.tenants.find(
+          (t) => t.role === "SUPER_ADMIN"
+        );
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.avatarUrl,
+          isSuperAdmin: !!superAdminEntry,
         };
       },
     }),
@@ -46,12 +53,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        token.isSuperAdmin = (user as any).isSuperAdmin ?? false;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (session.user as any).isSuperAdmin = token.isSuperAdmin ?? false;
       }
       return session;
     },

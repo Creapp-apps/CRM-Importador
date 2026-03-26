@@ -1,141 +1,135 @@
-import { Package, Users, ShoppingCart, Truck, TrendingUp, TrendingDown, AlertTriangle, DollarSign } from 'lucide-react';
+import { prisma } from '@/lib/prisma';
+import { getCurrentTenantUser } from '@/lib/tenant';
+import { redirect } from 'next/navigation';
+import { ShoppingCart, Users, Package, TrendingUp, Truck, Plus } from 'lucide-react';
+import Link from 'next/link';
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const tenantUser = await getCurrentTenantUser();
+  if (!tenantUser) redirect('/login');
+
+  const [
+    productsCount,
+    customersCount,
+    ordersCount,
+    pendingRoutesCount,
+    recentOrders
+  ] = await Promise.all([
+    prisma.product.count({ where: { tenantId: tenantUser.tenantId, isActive: true } }),
+    prisma.customer.count({ where: { tenantId: tenantUser.tenantId, isActive: true } }),
+    prisma.order.count({ where: { tenantId: tenantUser.tenantId } }),
+    prisma.deliveryRoute.count({ where: { tenantId: tenantUser.tenantId, status: 'PLANNING' } }),
+    prisma.order.findMany({
+      where: { tenantId: tenantUser.tenantId },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: { customer: { select: { tradeName: true, businessName: true } } }
+    })
+  ]);
+
+  const stats = [
+    { label: 'Productos Activos', value: productsCount, icon: Package, color: '#8b5cf6', href: '/dashboard/products' },
+    { label: 'Clientes', value: customersCount, icon: Users, color: '#06b6d4', href: '/dashboard/customers' },
+    { label: 'Pedidos Históricos', value: ordersCount, icon: ShoppingCart, color: '#10b981', href: '/dashboard/orders' },
+    { label: 'Rutas Pendientes', value: pendingRoutesCount, icon: Truck, color: '#f59e0b', href: '/dashboard/delivery' },
+  ];
+
   return (
     <div className="animate-fade-in">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Resumen general del negocio</p>
-        </div>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '26px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+          Hola, {tenantUser.user.name.split(' ')[0]} 👋
+        </h1>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          Este es el resumen de {tenantUser.tenant?.name || 'tu importadora'} para hoy.
+        </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="stat-grid">
-        <div className="stat-card" style={{ '--stat-color': '#6366f1', '--stat-color-faint': 'rgba(99, 102, 241, 0.1)' } as React.CSSProperties}>
-          <div className="stat-card-icon">
-            <Package size={22} />
-          </div>
-          <div className="stat-card-value">0</div>
-          <div className="stat-card-label">Productos Activos</div>
-        </div>
-
-        <div className="stat-card" style={{ '--stat-color': '#06b6d4', '--stat-color-faint': 'rgba(6, 182, 212, 0.1)' } as React.CSSProperties}>
-          <div className="stat-card-icon">
-            <Users size={22} />
-          </div>
-          <div className="stat-card-value">0</div>
-          <div className="stat-card-label">Clientes Registrados</div>
-        </div>
-
-        <div className="stat-card" style={{ '--stat-color': '#10b981', '--stat-color-faint': 'rgba(16, 185, 129, 0.1)' } as React.CSSProperties}>
-          <div className="stat-card-icon">
-            <ShoppingCart size={22} />
-          </div>
-          <div className="stat-card-value">0</div>
-          <div className="stat-card-label">Pedidos del Mes</div>
-        </div>
-
-        <div className="stat-card" style={{ '--stat-color': '#f59e0b', '--stat-color-faint': 'rgba(245, 158, 11, 0.1)' } as React.CSSProperties}>
-          <div className="stat-card-icon">
-            <Truck size={22} />
-          </div>
-          <div className="stat-card-value">0</div>
-          <div className="stat-card-label">Repartos Activos</div>
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+        {stats.map((stat, i) => (
+          <Link key={i} href={stat.href} className="card" style={{ textDecoration: 'none', display: 'block', transition: 'all 0.2s' }}>
+            <div style={{
+              width: '40px', height: '40px', borderRadius: '10px',
+              background: `${stat.color}15`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: '16px',
+            }}>
+              <stat.icon size={20} color={stat.color} />
+            </div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {stat.value.toLocaleString('es-AR')}
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+              {stat.label}
+            </div>
+          </Link>
+        ))}
       </div>
 
-      {/* Content Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        {/* Recent Orders */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
         <div className="card">
-          <div className="card-header">
-            <div>
-              <h2 className="card-title">Últimos Pedidos</h2>
-              <p className="card-subtitle">Actividad reciente</p>
-            </div>
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 className="card-title">Últimos Pedidos</h2>
+            <Link href="/dashboard/orders" style={{ fontSize: '13px', color: 'var(--color-primary-light)', textDecoration: 'none' }}>
+              Ver todos →
+            </Link>
           </div>
-          <div className="empty-state" style={{ padding: '40px 20px' }}>
-            <div className="empty-state-icon">
-              <ShoppingCart size={28} />
+          
+          {recentOrders.length === 0 ? (
+            <div className="empty-state" style={{ padding: '32px 16px', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+              <ShoppingCart size={24} style={{ color: 'var(--text-muted)' }} />
+              <p style={{ marginTop: '12px', fontSize: '14px', color: 'var(--text-muted)' }}>No tenés pedidos recientes</p>
+              <Link href="/dashboard/orders/new" className="btn btn-primary btn-sm" style={{ marginTop: '16px' }}>
+                <Plus size={16} /> Crear Pedido
+              </Link>
             </div>
-            <h3 className="empty-state-title">Sin pedidos aún</h3>
-            <p className="empty-state-desc">
-              Los pedidos aparecerán aquí a medida que se carguen en el sistema.
-            </p>
-          </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {recentOrders.map(order => (
+                <div key={order.id} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '12px 16px', borderRadius: '8px', background: 'var(--bg-root)',
+                  border: '1px solid var(--border-color)'
+                }}>
+                  <div>
+                    <Link href={`/dashboard/orders/${order.id}`} style={{ fontWeight: 600, color: 'var(--color-primary-light)', textDecoration: 'none' }}>
+                      {order.orderNumber}
+                    </Link>
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {order.customer.tradeName || order.customer.businessName}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                      ${Number(order.total).toLocaleString('es-AR')}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {new Date(order.createdAt).toLocaleDateString('es-AR')}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Stock Alerts */}
         <div className="card">
           <div className="card-header">
-            <div>
-              <h2 className="card-title">Alertas de Stock</h2>
-              <p className="card-subtitle">Productos con stock bajo</p>
-            </div>
+            <h2 className="card-title">Accesos Rápidos</h2>
           </div>
-          <div className="empty-state" style={{ padding: '40px 20px' }}>
-            <div className="empty-state-icon" style={{ background: 'rgba(245, 158, 11, 0.1)' }}>
-              <AlertTriangle size={28} style={{ color: '#fbbf24' }} />
-            </div>
-            <h3 className="empty-state-title">Todo en orden</h3>
-            <p className="empty-state-desc">
-              No hay productos con stock por debajo del mínimo configurado.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Revenue & Performance Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginTop: '24px' }}>
-        {/* Revenue Card */}
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h2 className="card-title">Facturación del Mes</h2>
-              <p className="card-subtitle">Resumen financiero</p>
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <DollarSign size={16} style={{ color: 'var(--color-success)' }} />
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Ventas</span>
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 700 }}>$0</div>
-              <div className="stat-card-change" style={{ color: 'var(--color-success)' }}>
-                <TrendingUp size={14} /> --
-              </div>
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <DollarSign size={16} style={{ color: 'var(--color-warning)' }} />
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Cobrado</span>
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 700 }}>$0</div>
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <DollarSign size={16} style={{ color: 'var(--color-danger)' }} />
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Pendiente</span>
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 700 }}>$0</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Top Clients */}
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h2 className="card-title">Top Clientes</h2>
-              <p className="card-subtitle">Mayor facturación</p>
-            </div>
-          </div>
-          <div className="empty-state" style={{ padding: '24px 16px' }}>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-              Sin datos suficientes aún
-            </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <Link href="/dashboard/orders/new" className="btn btn-primary" style={{ justifyContent: 'center' }}>
+              <Plus size={18} /> Nuevo Pedido
+            </Link>
+            <Link href="/dashboard/products/new" className="btn btn-secondary" style={{ justifyContent: 'center' }}>
+              <Plus size={18} /> Agregar Producto
+            </Link>
+            <Link href="/dashboard/customers/new" className="btn btn-secondary" style={{ justifyContent: 'center' }}>
+              <Plus size={18} /> Nuevo Cliente
+            </Link>
+            <Link href="/dashboard/delivery/new" className="btn btn-secondary" style={{ justifyContent: 'center', marginTop: '16px' }}>
+              <Truck size={18} /> Armar Reparto
+            </Link>
           </div>
         </div>
       </div>

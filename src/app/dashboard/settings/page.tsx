@@ -1,90 +1,38 @@
-'use client';
+import { notFound, redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
+import { getCurrentTenantUser } from '@/lib/tenant';
+import SettingsForm from './settings-form';
 
-import { Settings, Building2, Users, Shield, Bell, Database } from 'lucide-react';
-import { useTenant } from '@/components/providers/tenant-provider';
+export const dynamic = 'force-dynamic';
 
-export default function SettingsPage() {
-  const { tenantName, tenantSlug, userRole } = useTenant();
+export default async function SettingsPage() {
+  const tenantUser = await getCurrentTenantUser();
+  if (!tenantUser) return redirect('/login');
+  
+  // Only ADMIN should access settings
+  if (tenantUser.role !== 'ADMIN') {
+    return (
+      <div className="animate-fade-in card p-8 text-center text-secondary">
+        <h2>Acceso Denegado</h2>
+        <p>Solamente los administradores pueden modificar la configuración del sistema.</p>
+      </div>
+    );
+  }
 
-  const settingsSections = [
-    {
-      icon: <Building2 size={22} />,
-      title: 'Datos de la Empresa',
-      description: 'Razón social, CUIT, dirección, logo y datos fiscales.',
-      color: '#6366f1',
-    },
-    {
-      icon: <Users size={22} />,
-      title: 'Usuarios y Roles',
-      description: 'Gestionar usuarios del equipo, asignar roles y permisos.',
-      color: '#06b6d4',
-    },
-    {
-      icon: <Shield size={22} />,
-      title: 'Facturación AFIP',
-      description: 'Configuración de punto de venta, certificados y entorno de AFIP.',
-      color: '#10b981',
-    },
-    {
-      icon: <Bell size={22} />,
-      title: 'Notificaciones',
-      description: 'Alertas de stock bajo, pedidos nuevos y recordatorios de cobro.',
-      color: '#f59e0b',
-    },
-    {
-      icon: <Database size={22} />,
-      title: 'Datos del Sistema',
-      description: 'Unidades de medida, categorías de clientes y canales de venta.',
-      color: '#ef4444',
-    },
-  ];
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantUser.tenantId },
+  });
+
+  if (!tenant) return notFound();
 
   return (
     <div className="animate-fade-in">
       <div className="page-header">
-        <div>
-          <h1 className="page-title">Configuración</h1>
-          <p className="page-subtitle">
-            {tenantName || 'Tu empresa'} — {tenantSlug || 'sin-slug'}
-          </p>
-        </div>
+        <h1 className="page-title">Configuración del Sistema</h1>
+        <p className="page-subtitle">Administrá las preferencias de tu importadora y datos operativos.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
-        {settingsSections.map((section) => (
-          <div
-            key={section.title}
-            className="card"
-            style={{ cursor: 'pointer', '--stat-color': section.color } as React.CSSProperties}
-          >
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-              <div
-                style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: 'var(--radius-md)',
-                  background: `${section.color}15`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: section.color,
-                  flexShrink: 0,
-                }}
-              >
-                {section.icon}
-              </div>
-              <div>
-                <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '4px' }}>
-                  {section.title}
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  {section.description}
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <SettingsForm initialData={tenant} />
     </div>
   );
 }
