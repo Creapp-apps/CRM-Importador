@@ -17,6 +17,7 @@ import {
   DollarSign,
   ChevronLeft,
   Menu,
+  Shield,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTenant } from '@/components/providers/tenant-provider';
@@ -111,6 +112,26 @@ export default function Sidebar() {
 
         {/* Navigation */}
         <nav className="sidebar-nav">
+          {/* Super Admin Panel Link */}
+          {userRole === 'SUPER_ADMIN' && (
+            <Link
+              href="/super-admin"
+              className="sidebar-item"
+              onClick={() => setMobileOpen(false)}
+              style={{
+                background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(99,102,241,0.1))',
+                border: '1px solid rgba(139,92,246,0.25)',
+                borderRadius: '8px',
+                marginBottom: '12px',
+                color: '#c4b5fd',
+                fontWeight: 600,
+              }}
+            >
+              <span className="sidebar-item-icon"><Shield size={20} /></span>
+              {!collapsed && 'Panel Super Admin'}
+            </Link>
+          )}
+
           {navItems.map((item) => {
             const showSection = item.section && item.section !== currentSection;
             if (item.section) currentSection = item.section;
