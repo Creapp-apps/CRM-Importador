@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getCurrentTenantUser } from '@/lib/tenant';
 import SettingsForm from './settings-form';
+import UoMManager from './uom-manager';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +33,10 @@ export default async function SettingsPage() {
         <p className="page-subtitle">Administrá las preferencias de tu importadora y datos operativos.</p>
       </div>
 
-      <SettingsForm initialData={tenant} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        <SettingsForm initialData={tenant} />
+        <UoMManager />
+      </div>
     </div>
   );
 }
