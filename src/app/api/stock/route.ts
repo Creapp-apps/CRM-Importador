@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get("productId");
 
-    const movements = await prisma.stockMovement.findMany({
+    const movements = await prisma.stockLog.findMany({
       where: {
         tenantId: tenantUser.tenantId,
         ...(productId ? { productId } : {}),
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       include: {
         product: { select: { sku: true, name: true, baseUnit: { select: { symbol: true } } } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { performedAt: "desc" },
       take: 100, // Limit to last 100 for now
     });
 
@@ -57,9 +57,9 @@ export async function POST(req: NextRequest) {
 
       // 2. Calculate new stock
       let stockChange = 0;
-      if (type === "IN") {
+      if (["PURCHASE", "RETURN", "DELIVERY_RETURN"].includes(type)) {
         stockChange = qtyNumber;
-      } else if (type === "OUT") {
+      } else if (["SALE", "LOSS", "DELIVERY_LOAD", "TRANSFER"].includes(type)) {
         stockChange = -qtyNumber;
         if (Number(product.currentStock) < qtyNumber) {
           throw new Error("Stock insuficiente para realizar la salida");
@@ -84,16 +84,18 @@ export async function POST(req: NextRequest) {
       }
 
       // 4. Create movement record
-      const movement = await tx.stockMovement.create({
+      const movement = await tx.stockLog.create({
         data: {
           tenantId: tenantUser.tenantId,
           productId,
           type,
-          quantity: type === "ADJUSTMENT" ? stockChange : qtyNumber,
+          quantity: type === "ADJUSTMENT" ? stockChange : (stockChange > 0 ? qtyNumber : -qtyNumber),
+          previousStock: product.currentStock,
+          newStock: Number(product.currentStock) + stockChange,
           reason: reason || "Ajuste manual",
           referenceType: "MANUAL",
-          createdById: tenantUser.user.id,
-          createdByName: tenantUser.user.name,
+          performedBy: tenantUser.user.id,
+          performedByName: tenantUser.user.name,
         },
       });
 

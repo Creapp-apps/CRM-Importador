@@ -15,7 +15,7 @@ export default async function BillingPage() {
         select: { orderNumber: true, customer: { select: { businessName: true, cuit: true } } },
       },
     },
-    orderBy: { issueDate: 'desc' },
+    orderBy: { issuedAt: 'desc' },
   });
 
   const receiptTypes: Record<number, string> = {
@@ -68,12 +68,12 @@ export default async function BillingPage() {
                 <tr key={inv.id}>
                   <td>
                     <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                      {new Date(inv.issueDate).toLocaleDateString('es-AR')}
+                      {new Date(inv.issuedAt).toLocaleDateString('es-AR')}
                     </span>
                   </td>
                   <td>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-primary-light)' }}>
-                      {inv.receiptType ? receiptTypes[inv.receiptType] : '—'}
+                      {inv.type || '—'}
                     </span>
                   </td>
                   <td>
@@ -99,19 +99,19 @@ export default async function BillingPage() {
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                        {inv.cae || '—'}
+                        {inv.afipCae || '—'}
                       </span>
-                      {inv.cae && <Receipt size={14} style={{ color: 'var(--color-success)' }} />}
+                      {inv.afipCae && <Receipt size={14} style={{ color: 'var(--color-success)' }} />}
                     </div>
                   </td>
                   <td>
                     <span style={{
                       fontSize: '11px', fontWeight: 600, padding: '3px 10px',
                       borderRadius: '999px',
-                      background: inv.status === 'APPROVED' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                      color: inv.status === 'APPROVED' ? '#34d399' : '#f87171',
+                      background: inv.status === 'ISSUED' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                      color: inv.status === 'ISSUED' ? '#34d399' : '#f87171',
                     }}>
-                      {inv.status === 'APPROVED' ? 'Autorizada' : 'Rechazada'}
+                      {inv.status === 'ISSUED' ? 'Autorizada' : 'Rechazada'}
                     </span>
                   </td>
                 </tr>

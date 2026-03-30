@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
           select: { orderNumber: true, customer: { select: { businessName: true, cuit: true } } },
         },
       },
-      orderBy: { issueDate: "desc" },
+      orderBy: { issuedAt: "desc" },
     });
 
     return NextResponse.json(invoices);
@@ -46,14 +46,14 @@ export async function POST(req: NextRequest) {
         data: {
           tenantId: tenantUser.tenantId,
           orderId,
-          receiptType: Number(receiptType),
+          type: receiptType === 1 ? 'FACTURA_A' : receiptType === 6 ? 'FACTURA_B' : 'FACTURA_C',
           total: Number(total),
+          subtotal: Number(total) / 1.21,
           invoiceNumber: simulatedInvoiceNumber,
-          cae: simulatedCaE,
-          caeVto: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days
-          status: "APPROVED",
-          createdById: tenantUser.user.id,
-          createdByName: tenantUser.user.name,
+          afipCae: simulatedCaE,
+          afipCaeExpiry: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days
+          status: "ISSUED",
+          customerId: body.customerId || "customer-1", // Will need real mapping
         },
       });
 

@@ -18,9 +18,12 @@ import {
   ChevronLeft,
   Menu,
   Shield,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTenant } from '@/components/providers/tenant-provider';
+import { useTheme } from '@/components/providers/theme-provider';
 
 interface NavItem {
   label: string;
@@ -40,16 +43,19 @@ const navItems: NavItem[] = [
   { label: 'Promociones', href: '/dashboard/promotions', icon: <DollarSign size={20} /> },
   // Ventas
   { label: 'Pedidos', href: '/dashboard/orders', icon: <ShoppingCart size={20} />, section: 'Ventas' },
-  { label: 'Facturación', href: '/dashboard/invoices', icon: <FileText size={20} /> },
+  { label: 'Facturación', href: '/dashboard/billing', icon: <FileText size={20} /> },
   // Logística
   { label: 'Repartos', href: '/dashboard/delivery', icon: <Truck size={20} />, section: 'Logística' },
   // Config
   { label: 'Configuración', href: '/dashboard/settings', icon: <Settings size={20} />, section: 'Sistema' },
+  // Ayuda
+  { label: 'Guía de Uso', href: '/dashboard/tutorial', icon: <FileText size={20} />, section: 'Ayuda' },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { tenantName, userName, userRole } = useTenant();
+  const { theme, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -158,8 +164,32 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Footer with user */}
+        {/* Footer */}
         <div className="sidebar-footer">
+          {/* Theme toggle */}
+          {!collapsed && (
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              style={{ width: '100%', justifyContent: 'center', marginBottom: '12px' }}
+            >
+              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+              {theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}
+            </button>
+          )}
+          {collapsed && (
+            <button
+              className="btn btn-ghost btn-icon"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              style={{ width: '100%', marginBottom: '8px' }}
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+          )}
+
+          {/* User info */}
           <div className="sidebar-user">
             <div className="sidebar-user-avatar">{initials}</div>
             {!collapsed && (
@@ -170,17 +200,17 @@ export default function Sidebar() {
                 </div>
               </div>
             )}
-            {!collapsed && (
-              <button
-                className="btn btn-ghost btn-icon"
-                onClick={() => signOut({ callbackUrl: '/login' })}
-                title="Cerrar sesión"
-                style={{ marginLeft: 'auto' }}
-              >
-                <LogOut size={16} />
-              </button>
-            )}
           </div>
+
+          {/* Logout button — always visible */}
+          <button
+            className="sidebar-logout-btn"
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            title="Cerrar sesión"
+          >
+            <LogOut size={16} />
+            {!collapsed && 'Cerrar Sesión'}
+          </button>
         </div>
       </aside>
     </>

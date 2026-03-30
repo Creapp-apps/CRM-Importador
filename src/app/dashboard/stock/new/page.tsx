@@ -21,7 +21,7 @@ export default function NewStockMovementPage() {
 
   const [form, setForm] = useState({
     productId: '',
-    type: 'IN', // IN, OUT, ADJUSTMENT
+    type: 'PURCHASE', // PURCHASE, RETURN, LOSS, TRANSFER, ADJUSTMENT
     quantity: '',
     reason: '',
   });
@@ -71,8 +71,8 @@ export default function NewStockMovementPage() {
   if (selectedProduct && form.quantity) {
     const current = Number(selectedProduct.currentStock);
     const qty = Number(form.quantity);
-    if (form.type === 'IN') newStockPreview = current + qty;
-    if (form.type === 'OUT') newStockPreview = current - qty;
+    if (['PURCHASE', 'RETURN'].includes(form.type)) newStockPreview = current + qty;
+    if (['LOSS', 'TRANSFER'].includes(form.type)) newStockPreview = current - qty;
     if (form.type === 'ADJUSTMENT') newStockPreview = qty;
   }
 
@@ -125,9 +125,11 @@ export default function NewStockMovementPage() {
                 onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
                 required
               >
-                <option value="IN">Entrada (+)</option>
-                <option value="OUT">Salida (-)</option>
-                <option value="ADJUSTMENT">Ajuste Absoluto(=)</option>
+                <option value="PURCHASE">Compra (+)</option>
+                <option value="RETURN">Devolución (+)</option>
+                <option value="LOSS">Pérdida/Merma (-)</option>
+                <option value="TRANSFER">Transferencia (-)</option>
+                <option value="ADJUSTMENT">Ajuste Absoluto (=)</option>
               </select>
             </div>
           </div>

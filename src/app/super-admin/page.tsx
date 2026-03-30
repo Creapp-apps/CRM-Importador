@@ -31,12 +31,12 @@ export default async function SuperAdminDashboard() {
   };
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#fafafa', letterSpacing: '-0.3px' }}>
+        <h1 style={{ fontSize: '26px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
           Panel de Administración
         </h1>
-        <p style={{ fontSize: '14px', color: '#71717a', marginTop: '4px' }}>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>
           Gestión de todas las importadoras en la plataforma CreAPP
         </p>
       </div>
@@ -44,12 +44,7 @@ export default async function SuperAdminDashboard() {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
         {stats.map((stat) => (
-          <div key={stat.label} style={{
-            background: '#0f0f14',
-            border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '12px',
-            padding: '24px',
-          }}>
+          <div key={stat.label} className="card">
             <div style={{
               width: '40px', height: '40px', borderRadius: '8px',
               background: `${stat.color}15`,
@@ -58,63 +53,54 @@ export default async function SuperAdminDashboard() {
             }}>
               <stat.icon size={20} color={stat.color} />
             </div>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#fafafa' }}>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)' }}>
               {stat.value}
             </div>
-            <div style={{ fontSize: '13px', color: '#71717a', marginTop: '4px' }}>{stat.label}</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{stat.label}</div>
           </div>
         ))}
       </div>
 
       {/* Recent Tenants */}
-      <div style={{
-        background: '#0f0f14',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: '12px',
-        padding: 0,
-        overflow: 'hidden',
-      }}>
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{
           padding: '20px 24px',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: '1px solid var(--border-color)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#fafafa' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
             Importadoras Recientes
           </h2>
           <Link href="/super-admin/tenants" style={{
-            fontSize: '13px', color: '#8b5cf6', textDecoration: 'none',
+            fontSize: '13px', color: 'var(--color-primary-light)', textDecoration: 'none',
           }}>
             Ver todas →
           </Link>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <tr>
               {['Empresa', 'CUIT', 'Plan', 'Usuarios', 'Productos', 'Clientes', 'Estado'].map(h => (
-                <th key={h} style={{
-                  textAlign: 'left', padding: '12px 16px',
-                  fontSize: '11px', fontWeight: 600,
-                  textTransform: 'uppercase', letterSpacing: '0.05em',
-                  color: '#71717a',
-                }}>{h}</th>
+                <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {recentTenants.map((tenant) => (
-              <tr key={tenant.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ fontWeight: 500, color: '#fafafa', fontSize: '14px' }}>{tenant.name}</div>
-                  <div style={{ fontSize: '12px', color: '#71717a' }}>{tenant.slug}</div>
+              <tr key={tenant.id}>
+                <td>
+                  <Link href={`/super-admin/tenants/${tenant.id}`} style={{ textDecoration: 'none' }}>
+                    <div style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: '14px' }}>{tenant.name}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{tenant.slug}</div>
+                  </Link>
                 </td>
-                <td style={{ padding: '14px 16px', fontSize: '13px', color: '#a1a1aa', fontFamily: 'monospace' }}>
+                <td style={{ fontFamily: 'monospace' }}>
                   {tenant.cuit || '—'}
                 </td>
-                <td style={{ padding: '14px 16px' }}>
+                <td>
                   <span style={{
                     fontSize: '12px', fontWeight: 500, padding: '3px 10px',
                     borderRadius: '999px',
@@ -124,16 +110,10 @@ export default async function SuperAdminDashboard() {
                     {tenant.plan}
                   </span>
                 </td>
-                <td style={{ padding: '14px 16px', fontSize: '14px', color: '#a1a1aa' }}>
-                  {tenant._count.users}
-                </td>
-                <td style={{ padding: '14px 16px', fontSize: '14px', color: '#a1a1aa' }}>
-                  {tenant._count.products}
-                </td>
-                <td style={{ padding: '14px 16px', fontSize: '14px', color: '#a1a1aa' }}>
-                  {tenant._count.customers}
-                </td>
-                <td style={{ padding: '14px 16px' }}>
+                <td>{tenant._count.users}</td>
+                <td>{tenant._count.products}</td>
+                <td>{tenant._count.customers}</td>
+                <td>
                   <span style={{
                     fontSize: '12px', fontWeight: 500, padding: '3px 10px',
                     borderRadius: '999px',

@@ -2,6 +2,7 @@ import { SessionProvider } from 'next-auth/react';
 import { TenantProvider } from '@/components/providers/tenant-provider';
 import Sidebar from '@/components/dashboard/sidebar';
 import { getCurrentTenantUser } from '@/lib/tenant';
+import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export default async function DashboardLayout({
@@ -9,6 +10,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Guard: Super Admin should never land in the tenant dashboard
+  const session = await auth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((session?.user as any)?.isSuperAdmin === true) {
+    redirect('/super-admin');
+  }
+
   let tenantData: {
     tenantId: string | null;
     tenantName: string | null;

@@ -25,6 +25,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Decode JWT payload to check isSuperAdmin flag
+  // NextAuth JWT is a JWE in production, but the session-token cookie
+  // for credentials provider contains a base64url-encoded payload we can peek at.
+  // However, since we can't reliably decode JWE in middleware without the secret,
+  // we use a lightweight approach: set a cookie flag after login.
+  // 
+  // Alternative: check a simple "role" cookie that we set during auth callbacks.
+  // For now, we'll use the __sa (super-admin) marker cookie set by the /api/auth/me endpoint.
+
   return NextResponse.next();
 }
 

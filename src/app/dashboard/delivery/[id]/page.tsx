@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { ArrowLeft, MapPin, Truck, Calendar, User, AlignLeft } from 'lucide-react';
 import RouteMap from '@/components/maps/RouteMapWrapper';
 
-export default async function DeliveryRouteDetailPage({ params }: { params: { id: string } }) {
+export default async function DeliveryRouteDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const tenantUser = await getCurrentTenantUser();
   if (!tenantUser) redirect('/login');
 
   const route = await prisma.deliveryRoute.findUnique({
     where: {
-      id: params.id,
+      id,
       tenantId: tenantUser.tenantId,
     },
     include: {
@@ -22,7 +23,7 @@ export default async function DeliveryRouteDetailPage({ params }: { params: { id
             include: {
               customer: true,
               items: {
-                include: { product: true }
+                include: { presentation: { include: { product: true } } }
               }
             }
           }
@@ -174,7 +175,7 @@ export default async function DeliveryRouteDetailPage({ params }: { params: { id
                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                          {item.order.items.map(oi => (
                            <li key={oi.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-primary)' }}>
-                             <span>{oi.quantity}x {oi.product.name}</span>
+                             <span>{Number(oi.quantity)}x {oi.presentation.product.name} ({oi.presentation.name})</span>
                            </li>
                          ))}
                        </ul>

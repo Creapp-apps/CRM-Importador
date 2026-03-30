@@ -268,6 +268,7 @@ export default function EditProductForm({ initialData }: { initialData: any }) {
                 value={form.baseUnitWeight}
                 onChange={e => setForm(f => ({ ...f, baseUnitWeight: e.target.value }))}
               />
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Ej: 500. Sirve para calcular el peso logístico.</span>
             </div>
             <div className="input-group">
               <label className="input-label">Stock Actual</label>
@@ -286,6 +287,7 @@ export default function EditProductForm({ initialData }: { initialData: any }) {
                 value={form.minimumStock}
                 onChange={e => setForm(f => ({ ...f, minimumStock: e.target.value }))}
               />
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Alerta al bajar de este valor.</span>
             </div>
           </div>
         </div>
@@ -346,6 +348,7 @@ export default function EditProductForm({ initialData }: { initialData: any }) {
                         value={p.shortName}
                         onChange={e => updatePresentation(i, 'shortName', e.target.value)}
                       />
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Abreviación para remitos (ej: F20)</span>
                     </div>
                     <div>
                       <label className="input-label">Código de Barras</label>
@@ -364,6 +367,7 @@ export default function EditProductForm({ initialData }: { initialData: any }) {
                         onChange={e => updatePresentation(i, 'conversionFactor', e.target.value)}
                         required
                       />
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Cant. de Unidades Base que trae. (Ej: 20)</span>
                     </div>
                   </div>
                   <div style={{ marginTop: '12px' }}>

@@ -186,7 +186,7 @@ export default function EditCustomerForm({ initialData }: { initialData: Custome
               <select
                 className="input-field"
                 value={form.customerType}
-                onChange={e => setForm(f => ({ ...f, customerType: e.target.value }))}
+                onChange={e => setForm(f => ({ ...f, customerType: e.target.value as 'BUSINESS' | 'INDIVIDUAL' }))}
               >
                 <option value="BUSINESS">Empresa / Negocio</option>
                 <option value="INDIVIDUAL">Revendedor Individual</option>
@@ -363,6 +363,7 @@ export default function EditCustomerForm({ initialData }: { initialData: Custome
                   </option>
                 ))}
               </select>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Aplica descuentos globales al cliente.</span>
             </div>
             <div className="input-group">
               <label className="input-label">Canal de Venta</label>
@@ -376,6 +377,7 @@ export default function EditCustomerForm({ initialData }: { initialData: Custome
                   <option key={ch.value} value={ch.value}>{ch.label}</option>
                 ))}
               </select>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Sirve para reportes y ruteo.</span>
             </div>
             <div className="input-group">
               <label className="input-label">Límite de Crédito ($)</label>
@@ -385,6 +387,7 @@ export default function EditCustomerForm({ initialData }: { initialData: Custome
                 value={form.creditLimit}
                 onChange={e => setForm(f => ({ ...f, creditLimit: e.target.value }))}
               />
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Dejar en blanco para ilimitado.</span>
             </div>
           </div>
 

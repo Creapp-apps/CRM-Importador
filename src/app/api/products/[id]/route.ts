@@ -4,14 +4,15 @@ import { requireTenantUser } from "@/lib/tenant";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenantUser = await requireTenantUser();
+    const { id } = await params;
 
     const product = await prisma.product.findUnique({
       where: {
-        id: params.id,
+        id,
         tenantId: tenantUser.tenantId,
       },
       include: {
@@ -31,10 +32,11 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenantUser = await requireTenantUser();
+    const { id } = await params;
     const body = await req.json();
 
     const {
@@ -55,7 +57,7 @@ export async function PUT(
     const updated = await prisma.$transaction(async (tx) => {
       // 1. Update product main info
       const product = await tx.product.update({
-        where: { id: params.id, tenantId: tenantUser.tenantId },
+        where: { id, tenantId: tenantUser.tenantId },
         data: {
           sku,
           name,
@@ -74,7 +76,7 @@ export async function PUT(
       if (presentations) {
         // Find existing to know what to delete
         const existing = await tx.productPresentation.findMany({
-          where: { productId: params.id, tenantId: tenantUser.tenantId },
+          where: { productId: id, tenantId: tenantUser.tenantId },
           select: { id: true },
         });
 
@@ -131,14 +133,15 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenantUser = await requireTenantUser();
+    const { id } = await params;
 
     await prisma.product.delete({
       where: {
-        id: params.id,
+        id,
         tenantId: tenantUser.tenantId,
       },
     });

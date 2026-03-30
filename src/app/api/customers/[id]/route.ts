@@ -4,14 +4,15 @@ import { requireTenantUser } from "@/lib/tenant";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenantUser = await requireTenantUser();
+    const { id } = await params;
 
     const customer = await prisma.customer.findUnique({
       where: {
-        id: params.id,
+        id,
         tenantId: tenantUser.tenantId,
       },
       include: {
@@ -99,14 +100,15 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenantUser = await requireTenantUser();
+    const { id } = await params;
 
     await prisma.customer.delete({
       where: {
-        id: params.id,
+        id,
         tenantId: tenantUser.tenantId,
       },
     });

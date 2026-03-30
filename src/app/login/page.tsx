@@ -28,11 +28,11 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Email o contraseña incorrectos');
       } else {
-        // Get session to check if super admin
-        const { getSession } = await import('next-auth/react');
-        const session = await getSession();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const isSuperAdmin = (session?.user as any)?.isSuperAdmin;
+        // Use server-side check to determine role — avoids race condition
+        // where getSession() returns stale data before JWT refreshes
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        const isSuperAdmin = data?.isSuperAdmin === true;
         router.push(isSuperAdmin ? '/super-admin' : '/dashboard');
         router.refresh();
       }

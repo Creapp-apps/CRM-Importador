@@ -345,6 +345,7 @@ export default function NewCustomerPage() {
                   </option>
                 ))}
               </select>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Aplica descuentos globales al cliente.</span>
             </div>
             <div className="input-group">
               <label className="input-label">Canal de Venta</label>
@@ -358,6 +359,7 @@ export default function NewCustomerPage() {
                   <option key={ch.value} value={ch.value}>{ch.label}</option>
                 ))}
               </select>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Sirve para reportes y ruteo.</span>
             </div>
             <div className="input-group">
               <label className="input-label">Límite de Crédito ($)</label>
@@ -368,6 +370,7 @@ export default function NewCustomerPage() {
                 value={form.creditLimit}
                 onChange={e => setForm(f => ({ ...f, creditLimit: e.target.value }))}
               />
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Dejar en blanco para ilimitado.</span>
             </div>
           </div>
 

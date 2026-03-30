@@ -8,20 +8,25 @@ export default async function StockHistoryPage() {
   const tenantUser = await getCurrentTenantUser();
   if (!tenantUser) redirect('/login');
 
-  const movements = await prisma.stockMovement.findMany({
+  const movements = await prisma.stockLog.findMany({
     where: { tenantId: tenantUser.tenantId },
     include: {
       product: {
         select: { name: true, sku: true, baseUnit: { select: { symbol: true } } },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { performedAt: 'desc' },
     take: 100, // Limit to last 100 movements
   });
 
   const typeStyles: Record<string, { bg: string, text: string, label: string }> = {
-    IN: { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', label: 'Entrada' },
-    OUT: { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', label: 'Salida' },
+    PURCHASE: { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', label: 'Compra' },
+    RETURN: { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', label: 'Devolución' },
+    DELIVERY_RETURN: { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', label: 'Retorno' },
+    SALE: { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', label: 'Venta' },
+    LOSS: { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', label: 'Pérdida' },
+    DELIVERY_LOAD: { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', label: 'Carga Reparto' },
+    TRANSFER: { bg: 'rgba(59, 130, 246, 0.15)', text: '#60a5fa', label: 'Transferencia' },
     ADJUSTMENT: { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15', label: 'Ajuste' },
   };
 
@@ -62,13 +67,13 @@ export default async function StockHistoryPage() {
             <tbody>
               {movements.map((mov) => {
                 const style = typeStyles[mov.type] || typeStyles.ADJUSTMENT;
-                const isPositive = mov.type !== 'OUT' && Number(mov.quantity) > 0;
+                const isPositive = Number(mov.quantity) > 0;
                 
                 return (
                   <tr key={mov.id}>
                     <td>
                       <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                        {new Date(mov.createdAt).toLocaleString('es-AR', {
+                        {new Date(mov.performedAt).toLocaleString('es-AR', {
                           day: '2-digit', month: 'short', year: 'numeric',
                           hour: '2-digit', minute: '2-digit'
                         })}
@@ -95,7 +100,7 @@ export default async function StockHistoryPage() {
                         fontWeight: 600,
                         color: isPositive ? 'var(--color-success)' : 'var(--color-danger)'
                       }}>
-                        {isPositive && mov.type !== 'ADJUSTMENT' ? '+' : ''}
+                        {isPositive ? '+' : ''}
                         {Number(mov.quantity).toLocaleString('es-AR')} {mov.product.baseUnit?.symbol}
                       </span>
                     </td>
@@ -106,7 +111,7 @@ export default async function StockHistoryPage() {
                     </td>
                     <td>
                       <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                        {mov.createdByName}
+                        {mov.performedByName}
                       </span>
                     </td>
                   </tr>

@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentTenantUser } from '@/lib/tenant';
 import { redirect } from 'next/navigation';
 
+import ImportExportButtons from './import-export-buttons';
+
 export default async function CustomersPage() {
   const tenantUser = await getCurrentTenantUser();
   if (!tenantUser) redirect('/login');
@@ -18,15 +20,18 @@ export default async function CustomersPage() {
 
   return (
     <div className="animate-fade-in">
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="page-title">Clientes</h1>
           <p className="page-subtitle">CRM — Gestión de clientes, categorías y cuentas corrientes</p>
         </div>
-        <Link href="/dashboard/customers/new" className="btn btn-primary">
-          <Plus size={18} />
-          Nuevo Cliente
-        </Link>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <ImportExportButtons />
+          <Link href="/dashboard/customers/new" className="btn btn-primary">
+            <Plus size={16} />
+            <span className="hide-on-mobile">Nuevo Cliente</span>
+          </Link>
+        </div>
       </div>
 
       {/* Search & Filter Bar */}

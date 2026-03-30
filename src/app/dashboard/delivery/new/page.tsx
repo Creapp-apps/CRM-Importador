@@ -134,7 +134,7 @@ export default function NewDeliveryRoutePage() {
                         <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '15px' }}>
                           {order.orderNumber}
                         </div>
-                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)", marginTop: '4px' }}>
+                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
                           Cliente: {order.customer?.tradeName || order.customer?.businessName}
                         </div>
                       </div>
@@ -194,6 +194,7 @@ export default function NewDeliveryRoutePage() {
                   value={form.vehicleInfo}
                   onChange={e => setForm(f => ({ ...f, vehicleInfo: e.target.value }))}
                 />
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Ej: Camioneta patente AA123BB. Sirve para trazabilidad logística.</span>
               </div>
 
               <div className="input-group">
