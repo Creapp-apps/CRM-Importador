@@ -67,7 +67,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="animate-fade-in">
-      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ marginBottom: '32px', display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
             Hola, {tenantUser.user.name.split(' ')[0]} 👋
@@ -82,7 +82,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className="stat-grid" style={{ marginBottom: '24px' }}>
         {stats.map((stat, i) => (
           <Link key={i} href={stat.href} className="card" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '16px', padding: '20px', transition: 'all 0.2s', borderColor: `${stat.color}30` }}>
             <div style={{
@@ -105,10 +105,10 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
         
         {/* Left Column: Recent Orders and Low Stock */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', flex: '1 1 500px', minWidth: 0 }}>
           
           <div className="card" style={{ flex: 1 }}>
             <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -195,7 +195,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Right Column: Quick Actions & Pending routes */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', flex: '1 1 300px', minWidth: 0 }}>
           
           <div className="card" style={{ background: 'var(--bg-surface)' }}>
             <div className="card-header">
