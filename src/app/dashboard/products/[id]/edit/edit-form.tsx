@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Package } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface UoM {
   id: string;
@@ -111,9 +112,11 @@ export default function EditProductForm({ initialData }: { initialData: any }) {
         throw new Error(data.error || 'Error al actualizar producto');
       }
 
+      toast.success('Producto actualizado correctamente');
       router.push('/dashboard/products');
       router.refresh();
     } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al actualizar producto');
       setError(err instanceof Error ? err.message : 'Error al actualizar producto');
     } finally {
       setLoading(false);
@@ -128,9 +131,11 @@ export default function EditProductForm({ initialData }: { initialData: any }) {
       const res = await fetch(`/api/products/${initialData.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Error al eliminar producto');
       
+      toast.success('Producto eliminado con éxito');
       router.push('/dashboard/products');
       router.refresh();
     } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al eliminar producto');
       setError(err instanceof Error ? err.message : 'Error al eliminar producto');
       setDeleting(false);
     }

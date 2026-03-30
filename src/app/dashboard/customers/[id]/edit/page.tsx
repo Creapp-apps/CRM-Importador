@@ -6,13 +6,14 @@ import EditCustomerForm from "./edit-form";
 export default async function EditCustomerPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const tenantUser = await getCurrentTenantUser();
   if (!tenantUser) return notFound();
 
   const customer = await prisma.customer.findUnique({
-    where: { id: params.id, tenantId: tenantUser.tenantId },
+    where: { id: id, tenantId: tenantUser.tenantId },
   });
 
   if (!customer) return notFound();

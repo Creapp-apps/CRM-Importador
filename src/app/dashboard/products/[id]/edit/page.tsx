@@ -6,13 +6,14 @@ import EditProductForm from "./edit-form";
 export default async function EditProductPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const tenantUser = await getCurrentTenantUser();
   if (!tenantUser) return notFound();
 
   const product = await prisma.product.findUnique({
-    where: { id: params.id, tenantId: tenantUser.tenantId },
+    where: { id: id, tenantId: tenantUser.tenantId },
     include: {
       presentations: true,
     },
